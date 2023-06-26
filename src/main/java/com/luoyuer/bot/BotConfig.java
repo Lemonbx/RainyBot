@@ -17,6 +17,9 @@ import net.mamoe.mirai.BotFactory;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.message.data.Message;
+import net.mamoe.mirai.message.data.MessageChain;
+import net.mamoe.mirai.message.data.MessageChainBuilder;
+import net.mamoe.mirai.message.data.QuoteReply;
 import net.mamoe.mirai.utils.BotConfiguration;
 
 import javax.annotation.PostConstruct;
@@ -35,7 +38,7 @@ public class BotConfig {
     public Bot bot() {
         Bot ins1 = BotFactory.INSTANCE.newBot(Convert.toLong(Holder.properties.getProperty("qq.acc")), Holder.properties.getProperty("qq.pwd"), new BotConfiguration() {{
             fileBasedDeviceInfo();
-            setProtocol(MiraiProtocol.ANDROID_PAD);
+            setProtocol(MiraiProtocol.ANDROID_PHONE);
         }});
         ins1.login();
         return ins1;
@@ -76,9 +79,9 @@ public class BotConfig {
         });
         bot.getEventChannel().subscribeAlways(net.mamoe.mirai.event.events.GroupMessageEvent.class, (event) -> {
             Group group = event.getBot().getGroup(event.getGroup().getId());
-            Friend friend1 = event.getBot().getFriend(event.getSender().getId());
+
             Holder.messageType.set(2);
-            Holder.friend.set(friend1);
+            Holder.user.set(event.getSender());
             Holder.group.set(group);
 
             String waitName = WaitUtil.getWaitName();
@@ -104,43 +107,69 @@ public class BotConfig {
                 }
             }
             Holder.messageType.remove();
-            Holder.friend.remove();
+            Holder.user.remove();
             Holder.group.remove();
         });
 
+//        bot.getEventChannel().subscribeAlways(net.mamoe.mirai.event.events.GroupMessageEvent.class, (event) -> {
+//
+//            DateTime now = DateUtil.date();
+//            int hour = now.getField(DateField.HOUR_OF_DAY);
+//            String message = event.getMessage().contentToString();
+//            List<String> morning = Arrays.asList("早", "早上好", "早好");
+//            List<String> noon = Arrays.asList("午", "午安", "午好");
+//            List<String> afternoon = Collections.singletonList("下午好");
+//            List<String> night = Arrays.asList("晚", "晚安", "晚好");
+//            if (morning.contains(message)) {
+//                if (hour >= 5 && hour < 12) {
+//                    event.getGroup().sendMessage("早哦");
+//                } else {
+//                    event.getGroup().sendMessage("不早啦");
+//                }
+//            } else if (noon.contains(message)) {
+//                if (hour >= 10 && hour < 14) {
+//                    event.getGroup().sendMessage("午好哦");
+//                } else {
+//                    event.getGroup().sendMessage("emmmm好像不是中午了吧");
+//                }
+//            } else if (afternoon.contains(message)) {
+//                if (hour >= 12 && hour < 18) {
+//                    event.getGroup().sendMessage("下午好");
+//                } else {
+//                    event.getGroup().sendMessage("诶嘿");
+//                }
+//            } else if (night.contains(message)) {
+//                if (hour >= 16 || hour < 8) {
+//                    event.getGroup().sendMessage("晚好");
+//                } else {
+//                    event.getGroup().sendMessage("你什么时候去的美国哦");
+//                }
+//            }
+//        });
         bot.getEventChannel().subscribeAlways(net.mamoe.mirai.event.events.GroupMessageEvent.class, (event) -> {
-            DateTime now = DateUtil.date();
-            int hour = now.getField(DateField.HOUR_OF_DAY);
+            Group group = event.getGroup();
+//            if (group.getId() == 42799195) {
             String message = event.getMessage().contentToString();
-            List<String> morning = Arrays.asList("早", "早上好", "早好");
-            List<String> noon = Arrays.asList("午", "午安", "午好");
-            List<String> afternoon = Collections.singletonList("下午好");
-            List<String> night = Arrays.asList("晚", "晚安", "晚好");
-            if (morning.contains(message)) {
-                if (hour >= 5 && hour < 12) {
-                    event.getGroup().sendMessage("早哦");
-                } else {
-                    event.getGroup().sendMessage("不早啦");
+            if (message.contains("\\u")) {
+                //unicode转中文
+                String[] split = message.split("\\\\u");
+                StringBuilder sb = new StringBuilder();
+                for (String s : split) {
+                    if (s.length() < 4) {
+                        sb.append(s);
+                    } else {
+                        String substring = s.substring(0, 4);
+                        sb.append((char) Integer.parseInt(substring, 16));
+                        sb.append(s.substring(4));
+                    }
                 }
-            } else if (noon.contains(message)) {
-                if (hour >= 10 && hour < 14) {
-                    event.getGroup().sendMessage("午好哦");
-                } else {
-                    event.getGroup().sendMessage("emmmm好像不是中午了吧");
-                }
-            } else if (afternoon.contains(message)) {
-                if (hour >= 12 && hour < 18) {
-                    event.getGroup().sendMessage("下午好");
-                } else {
-                    event.getGroup().sendMessage("诶嘿");
-                }
-            } else if (night.contains(message)) {
-                if (hour >= 16 || hour < 8) {
-                    event.getGroup().sendMessage("晚好");
-                } else {
-                    event.getGroup().sendMessage("你什么时候去的美国哦");
-                }
+                MessageChain chain = new MessageChainBuilder()
+                        .append(new QuoteReply(event.getMessage()))
+                        .append(sb.toString())
+                        .build();
+                event.getSubject().sendMessage(chain);
             }
+//            }
         });
     }
 }

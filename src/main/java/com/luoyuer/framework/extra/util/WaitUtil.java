@@ -29,7 +29,7 @@ public class WaitUtil {
         if (type == 1) {
             return type + "_" + Holder.friend.get().getId();
         } else {
-            return type + "_" + Holder.group.get().getId() + "_" + Holder.friend.get().getId();
+            return type + "_" + Holder.group.get().getId() + "_" + Holder.user.get().getId();
         }
     }
 }

@@ -4,6 +4,7 @@ import com.luoyuer.framework.Holder;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
+import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.message.data.Audio;
 import net.mamoe.mirai.message.data.Image;
 import net.mamoe.mirai.utils.ExternalResource;
