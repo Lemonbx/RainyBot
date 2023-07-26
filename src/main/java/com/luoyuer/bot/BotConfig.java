@@ -29,23 +29,26 @@ import java.util.List;
 
 @Bean
 public class BotConfig {
-    @Inject
-    ActionInvoke invoke;
-    @Inject
-    Bot bot;
 
     @Bean
-    public Bot bot() {
-        Bot ins1 = BotFactory.INSTANCE.newBot(Convert.toLong(Holder.properties.getProperty("qq.acc")), Holder.properties.getProperty("qq.pwd"), new BotConfiguration() {{
+    public Bot bot(@Inject ActionInvoke invoke,@Inject("ttttt") String ttttt) {
+        System.out.println(ttttt);
+        Bot bot = BotFactory.INSTANCE.newBot(Convert.toLong(Holder.properties.getProperty("qq.acc")), Holder.properties.getProperty("qq.pwd"), new BotConfiguration() {{
             fileBasedDeviceInfo();
             setProtocol(MiraiProtocol.ANDROID_PHONE);
         }});
-        ins1.login();
-        return ins1;
+        bot.login();
+        subscribe(bot, invoke);
+        return bot;
+    }
+    @Bean("ttttt")
+    public String ttttt(@Inject Bot bot){
+        System.out.println("bot="+bot);
+        return  "123";
     }
 
-    @PostConstruct
-    public void init() {
+    private void subscribe(Bot bot, ActionInvoke invoke) {
+        System.out.println(invoke);
         bot.getEventChannel().subscribeAlways(net.mamoe.mirai.event.events.UserMessageEvent.class, (event) -> {
             System.out.println(Thread.currentThread().getName());
             System.out.println(Holder.messageType.get());
@@ -110,6 +113,11 @@ public class BotConfig {
             Holder.user.remove();
             Holder.group.remove();
         });
+    }
+
+    @PostConstruct
+    public void init() {
+
 
 //        bot.getEventChannel().subscribeAlways(net.mamoe.mirai.event.events.GroupMessageEvent.class, (event) -> {
 //
@@ -146,30 +154,6 @@ public class BotConfig {
 //                }
 //            }
 //        });
-        bot.getEventChannel().subscribeAlways(net.mamoe.mirai.event.events.GroupMessageEvent.class, (event) -> {
-            Group group = event.getGroup();
-//            if (group.getId() == 42799195) {
-            String message = event.getMessage().contentToString();
-            if (message.contains("\\u")) {
-                //unicode转中文
-                String[] split = message.split("\\\\u");
-                StringBuilder sb = new StringBuilder();
-                for (String s : split) {
-                    if (s.length() < 4) {
-                        sb.append(s);
-                    } else {
-                        String substring = s.substring(0, 4);
-                        sb.append((char) Integer.parseInt(substring, 16));
-                        sb.append(s.substring(4));
-                    }
-                }
-                MessageChain chain = new MessageChainBuilder()
-                        .append(new QuoteReply(event.getMessage()))
-                        .append(sb.toString())
-                        .build();
-                event.getSubject().sendMessage(chain);
-            }
 //            }
-        });
     }
 }
