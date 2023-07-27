@@ -31,8 +31,7 @@ import java.util.List;
 public class BotConfig {
 
     @Bean
-    public Bot bot(@Inject ActionInvoke invoke,@Inject("ttttt") String ttttt) {
-        System.out.println(ttttt);
+    public Bot bot(@Inject ActionInvoke invoke) {
         Bot bot = BotFactory.INSTANCE.newBot(Convert.toLong(Holder.properties.getProperty("qq.acc")), Holder.properties.getProperty("qq.pwd"), new BotConfiguration() {{
             fileBasedDeviceInfo();
             setProtocol(MiraiProtocol.ANDROID_PHONE);
@@ -40,11 +39,6 @@ public class BotConfig {
         bot.login();
         subscribe(bot, invoke);
         return bot;
-    }
-    @Bean("ttttt")
-    public String ttttt(@Inject Bot bot){
-        System.out.println("bot="+bot);
-        return  "123";
     }
 
     private void subscribe(Bot bot, ActionInvoke invoke) {

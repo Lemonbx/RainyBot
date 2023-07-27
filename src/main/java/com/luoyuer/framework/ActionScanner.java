@@ -1,5 +1,6 @@
 package com.luoyuer.framework;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
 import com.luoyuer.framework.anno.Action;
@@ -12,10 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,36 +52,7 @@ public class ActionScanner {
                 }
                 Bean annotation1 = method.getAnnotation(Bean.class);
                 if (annotation1 != null) {
-//                    Object methodBean = null;
-//                    try {
-//                        Parameter[] parameters = method.getParameters();
-//                        List<Object> parmsVal = new ArrayList<>();
-//                        boolean success = true;
-//                        for (Parameter parameter : parameters) {
-//                            Object o1 = getBeanByField(parameter);
-//                            if (o1 == null) {
-//                                success = false;
-//                                break;
-//                            }
-//                            parmsVal.add(Convert.convert(parameter.getType(), o1));
-//                        }
-//                        if (!success) {
                     addToLastInit(new LastInit(o, method));
-//                            continue;
-//                        }
-//                        methodBean = method.invoke(o, parmsVal.toArray());
-//                    } catch (IllegalAccessException e) {
-//                        throw new RuntimeException(e);
-//                    } catch (InvocationTargetException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                    Holder.classIns.put(methodBean.getClass().getName(), methodBean);
-//                    Holder.cacheClass.put(methodBean.getClass().getName(), methodBean.getClass());
-//                    String value = annotation1.value();
-//                    if (StrUtil.isBlank(value)) {
-//                        value = method.getName();
-//                    }
-//                    Holder.nameToClass.put(value, methodBean.getClass().getName());
                 }
             }
         }
@@ -159,7 +128,7 @@ public class ActionScanner {
     private static void addToLastInit(LastInit o) {
         //检查是否循环依赖
         Parameter[] parameters = o.method.getParameters();
-        if (Arrays.stream(parameters).anyMatch(a -> a.getClass().getName().equals(o.o.getClass().getName()))) {
+        if (Arrays.stream(parameters).anyMatch(a -> a.getType().getName().equals(o.method.getReturnType().getName()))) {
             throw new RuntimeException("形参不允许包含该类");
         }
         //获取未实例化完成的列表
@@ -168,17 +137,33 @@ public class ActionScanner {
             return beanByField == null;
         }).collect(Collectors.toList());
         //检查未完成的是否包含在未完成列表中
-        List<LastInit> collect = lastInit.stream().filter(a -> unInit.stream().anyMatch(b -> b.getClass().getName().equals(a.o.getClass().getName()))).collect(Collectors.toList());
-        //添加到collect[0]之前
+        List<LastInit> collect = lastInit.stream().filter(a -> unInit.stream().anyMatch(b -> b.getType().getName().equals(a.method.getReturnType().getName()))).collect(Collectors.toList());
         if (collect.size() == 0) {
-            lastInit.add(o);
+            Optional<LastInit> firstDep = firstDep(o.method);
+            if (firstDep.isPresent()) {
+                int index = lastInit.indexOf(firstDep.get());
+                lastInit.add(index, o);
+            } else {
+                lastInit.add(o);
+            }
         } else {
-            if (collect.stream().anyMatch(b -> Arrays.stream(b.method.getParameters()).anyMatch(a -> a.getClass().getName().equals(o.method.getReturnType().getName())))) {
+            if (collect.stream().anyMatch(b -> Arrays.stream(b.method.getParameters()).anyMatch(a -> a.getType().getName().equals(o.method.getReturnType().getName())))) {
                 throw new RuntimeException("循环依赖");
             }
-            int index = lastInit.indexOf(collect.get(0));
-            lastInit.add(index, o);
+            Optional<LastInit> firstDep = firstDep(o.method);
+            if (firstDep.isPresent()) {
+                int index = lastInit.indexOf(firstDep.get());
+                lastInit.add(index, o);
+            } else {
+                int index = lastInit.indexOf(CollUtil.getLast(collect));
+                lastInit.add(index + 1, o);
+            }
         }
+    }
+
+    //判断是否被依赖
+    private static Optional<LastInit> firstDep(Method m) {
+        return lastInit.stream().filter(a -> Arrays.stream(a.method.getParameters()).anyMatch(b -> b.getType().getName().equals(m.getReturnType().getName()))).findFirst();
     }
 
     public static Object getBeanByField(Parameter parameter) {
