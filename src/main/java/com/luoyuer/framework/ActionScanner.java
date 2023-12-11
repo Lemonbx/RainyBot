@@ -20,8 +20,8 @@ import java.util.stream.Stream;
 public class ActionScanner {
     private static List<LastInit> lastInit = new ArrayList<>();
 
-    public static void scan() {
-        Reflections refs = new Reflections();
+    public static void scan(List<String> scansPackage) {
+        Reflections refs = new Reflections(scansPackage.toArray());
         Set<Class<?>> beans = refs.getTypesAnnotatedWith(Bean.class);
         for (Class<?> bean : beans) {
 //            System.out.println(bean.getName());
@@ -138,7 +138,7 @@ public class ActionScanner {
         }).collect(Collectors.toList());
         //检查未完成的是否包含在未完成列表中
         List<LastInit> collect = lastInit.stream().filter(a -> unInit.stream().anyMatch(b -> b.getType().getName().equals(a.method.getReturnType().getName()))).collect(Collectors.toList());
-        if (collect.size() == 0) {
+        if (collect.isEmpty()) {
             Optional<LastInit> firstDep = firstDep(o.method);
             if (firstDep.isPresent()) {
                 int index = lastInit.indexOf(firstDep.get());

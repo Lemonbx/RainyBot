@@ -5,7 +5,9 @@ import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.thread.threadlocal.NamedThreadLocal;
+import cn.hutool.core.util.StrUtil;
 import com.luoyuer.framework.ActionInvoke;
+import com.luoyuer.framework.ContextLoader;
 import com.luoyuer.framework.Holder;
 import com.luoyuer.framework.converter.MessageConverter;
 import com.luoyuer.framework.anno.Bean;
@@ -14,6 +16,7 @@ import com.luoyuer.framework.entity.WaitInfo;
 import com.luoyuer.framework.extra.util.WaitUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.BotFactory;
+import net.mamoe.mirai.auth.BotAuthorization;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.message.data.Message;
@@ -32,17 +35,38 @@ public class BotConfig {
 
     @Bean
     public Bot bot(@Inject ActionInvoke invoke) {
-        Bot bot = BotFactory.INSTANCE.newBot(Convert.toLong(Holder.properties.getProperty("qq.acc")), Holder.properties.getProperty("qq.pwd"), new BotConfiguration() {{
-            fileBasedDeviceInfo();
-            setProtocol(MiraiProtocol.ANDROID_PHONE);
-        }});
+        Bot bot = ContextLoader.getBot();
+        if (bot==null) {
+            Long account = Convert.toLong(Holder.properties.getProperty("qq.acc"));
+            if (account == null || account == 0L) {
+                throw new RuntimeException("请完善配置文件");
+            }
+            String password = Holder.properties.getProperty("qq.pwd");
+
+            if (StrUtil.isNotBlank(password)) {
+                bot = BotFactory.INSTANCE.newBot(account, password.trim(), new BotConfiguration() {{
+                    fileBasedDeviceInfo();
+                    setProtocol(MiraiProtocol.ANDROID_PHONE);
+                }});
+            } else {
+                bot = BotFactory.INSTANCE.newBot(account, BotAuthorization.byQRCode(), new BotConfiguration() {{
+                    fileBasedDeviceInfo();
+                    setProtocol(MiraiProtocol.ANDROID_WATCH);
+                }});
+            }
+        }
         bot.login();
         subscribe(bot, invoke);
+        try {
+            ContextLoader.doAfter(bot);
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
         return bot;
     }
 
     private void subscribe(Bot bot, ActionInvoke invoke) {
-        System.out.println(invoke);
         bot.getEventChannel().subscribeAlways(net.mamoe.mirai.event.events.UserMessageEvent.class, (event) -> {
             System.out.println(Thread.currentThread().getName());
             System.out.println(Holder.messageType.get());

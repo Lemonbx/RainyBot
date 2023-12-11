@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-@Bean
+//@Bean
 public class DefaultAction {
     @Action("你好")
     public String hello() {
@@ -57,7 +57,8 @@ public class DefaultAction {
 
     @Action("听{name}")
     public Object listen(String name) {
-        HttpResponse execute = HttpUtil.createPost("https://www.qqwtt.com/")
+        //https://www.qqwtt.com/
+        HttpResponse execute = HttpUtil.createPost("https://y.0msl.com/")
                 .form("filter", "name")
                 .form("type", "netease")
                 .form("page", 1)
@@ -80,7 +81,8 @@ public class DefaultAction {
             objects.add(img);
             objects.add(url);
             MsgUtil.sendToSource(objects);
-            return url;
+            MsgUtil.sendToSource(url);
+            return new Aud(HttpUtil.downloadBytes(url));
         } else {
             return entries.getStr("error");
         }

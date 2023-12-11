@@ -1,26 +1,17 @@
 package com.luoyuer.framework.converter;
 
-import cn.hutool.core.img.ImgUtil;
 import com.luoyuer.framework.Holder;
 import com.luoyuer.framework.anno.Bean;
 import com.luoyuer.framework.extra.Aud;
 import com.luoyuer.framework.extra.Img;
 import com.luoyuer.framework.extra.util.FileUtil;
-import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.message.data.Message;
 import net.mamoe.mirai.message.data.MessageUtils;
 import net.mamoe.mirai.message.data.PlainText;
-import net.mamoe.mirai.utils.ExternalResource;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.PostConstruct;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Bean
 public class MessageConverter {
