@@ -1,5 +1,5 @@
 # RainyBot
-基于mirai二次封装
+基于[mirai](https://github.com/mamoe/mirai)二次封装(<span style="color:red">请注意，Mirai基于AGPLv3 LICENSE</span>)
 
 ### 快速开始
 
@@ -8,7 +8,7 @@
 <dependency>
     <groupId>com.luoyuer</groupId>
     <artifactId>RainyBot</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 </dependency>
 ```
 添加mirai最新依赖
