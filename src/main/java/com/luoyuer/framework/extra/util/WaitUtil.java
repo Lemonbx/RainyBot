@@ -15,8 +15,18 @@ public class WaitUtil {
         info.setDelayTime(System.currentTimeMillis() + duration.toMillis());
         Thread currentThread = Thread.currentThread();
         info.setThread(currentThread);
-        Holder.waitInfoMap.put(getWaitName(), info);
-        currentThread.suspend();
+        String waitName = getWaitName();
+        Holder.waitInfoMap.put(waitName, info);
+        try{
+            boolean result = info.conditionWait();
+            if (!result){
+                throw new RuntimeException("等待超时");
+            }
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }finally {
+            Holder.waitInfoMap.remove(waitName);
+        }
         String s = info.getReturnMessage();
         if (StrUtil.isBlank(s)) {
             throw new RuntimeException("等待超时");
